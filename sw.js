@@ -1,9 +1,70 @@
-const CACHE="quran-player-shell-v1";
-const SHELL=["./","./index.html","./styles.css","./app.js","./manifest.webmanifest","./assets/icon.svg"];
-self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL))));
-self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE&&k!=="quran-audio-v1").map(k=>caches.delete(k))))));
-self.addEventListener("fetch",e=>{
- const url=new URL(e.request.url);
- if(url.origin===location.origin){e.respondWith(caches.match(e.request).then(hit=>hit||fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match("./index.html"))));return}
- if(e.request.destination==="audio"){e.respondWith(caches.open("quran-audio-v1").then(c=>c.match(e.request).then(hit=>hit||fetch(e.request))))}
+const SHELL_CACHE = "quran-player-shell-v2";
+const AUDIO_CACHE = "quran-audio-v1";
+const SHELL = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./assets/icon.svg"];
+
+self.addEventListener("install", event => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(SHELL_CACHE);
+    await cache.addAll(SHELL);
+    await self.skipWaiting();
+  })());
+});
+
+self.addEventListener("activate", event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys
+      .filter(key => key.startsWith("quran-player-shell-") && key !== SHELL_CACHE)
+      .map(key => caches.delete(key)));
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener("fetch", event => {
+  const request = event.request;
+  if (request.method !== "GET") return;
+
+  const url = new URL(request.url);
+  if (url.origin === self.location.origin) {
+    if (request.mode === "navigate") {
+      event.respondWith((async () => {
+        try {
+          const response = await fetch(request);
+          if (response.ok) {
+            const cache = await caches.open(SHELL_CACHE);
+            cache.put("./index.html", response.clone()).catch(() => {});
+          }
+          return response;
+        } catch (_) {
+          return (await caches.match("./index.html")) || Response.error();
+        }
+      })());
+      return;
+    }
+
+    event.respondWith((async () => {
+      const cached = await caches.match(request);
+      if (cached) return cached;
+      try {
+        const response = await fetch(request);
+        if (response.ok && response.type === "basic") {
+          const cache = await caches.open(SHELL_CACHE);
+          cache.put(request, response.clone()).catch(() => {});
+        }
+        return response;
+      } catch (_) {
+        return Response.error();
+      }
+    })());
+    return;
+  }
+
+  if (request.destination === "audio") {
+    event.respondWith((async () => {
+      const cache = await caches.open(AUDIO_CACHE);
+      const cached = await cache.match(request) || await cache.match(url.href);
+      if (cached) return cached;
+      return fetch(request);
+    })());
+  }
 });
