@@ -76,9 +76,11 @@ async function chooseReciter(){
  populateSelect($("riwayaSelect"),reads,t("chooseRead"),r=>r.name||r.moshaf_name||r.rewaya_name||"Riwayah");
  $("riwayaSelect").disabled=!reads.length;
  if(!reads.length)$("selectionMessage").textContent=t("noAudio");
+ await refreshSelection();
 }
 async function chooseRead(){
- const reads=readList(selectedReciter());state.selectedRead=reads[Number($("riwayaSelect").value)]||null;
+ const reads=readList(selectedReciter()),value=$("riwayaSelect").value;
+ state.selectedRead=value===""?null:reads[Number(value)]||null;
  await refreshSelection();
 }
 async function refreshSelection(){
