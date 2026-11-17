@@ -1,7 +1,7 @@
 /* Quran Player — MP3Quran API v3 adapter. No private keys are required. */
 const API = "https://mp3quran.net/api/v3";
 const $ = (id) => document.getElementById(id);
-const state = { reciters: [], surahs: [], selectedRead: null, timing: [], audioUrl: "", repeatPass: 0, ayahPass: 0, repeatCount: 2, repeatMode: "none", rangeStart: 1, rangeEnd: 7, currentAyah: null, lang: "ar", saved: [] };
+const state = { reciters: [], surahs: [], selectedRead: null, timing: [], audioUrl: "", repeatPass: 0, ayahPass: 0, repeatCount: 2, repeatMode: "none", rangeStart: 1, rangeEnd: 7, currentAyah: null, lang: "ar", saved: [], objectUrl: "" };
 
 const translations = {
  ar:{appName:"مشغل القرآن الكريم",tagline:"رفيق تلاوتك أينما كنت",online:"متصل",offline:"دون اتصال",welcomeEyebrow:"مساحتك القرآنية",welcomeTitle:"أنصت بقلبك، وتدبّر بطمأنينة",welcomeText:"اختر قارئك وسورتك، وحدد موضع التلاوة والتكرار الذي يناسبك.",listenSetup:"إعداد التلاوة",listenSetupSub:"حدد القارئ والرواية والمقطع",reciter:"القارئ",riwaya:"الرواية / المصحف",surah:"السورة",fromAyah:"من الآية",toAyah:"إلى الآية",repeatSettings:"إعدادات التكرار",repeatMode:"نمط التكرار",repeatNone:"بدون تكرار",repeatAyah:"تكرار كل آية",repeatRange:"تكرار المقطع كاملاً",repeatCount:"عدد مرات التكرار",playSelection:"تشغيل التحديد",nowPlaying:"التلاوة الحالية",speed:"السرعة",saveOffline:"حفظ للاستماع دون إنترنت",ayahRange:"نطاق الآيات",ayahRangeSub:"بيانات التوقيت متاحة لبعض التلاوات فقط",timingHint:"سيتم استخدام توقيت الآيات عند توفره من المصدر.",chooseRange:"اختر السورة والقارئ لعرض نطاق الآيات.",offlineLibrary:"المكتبة دون إنترنت",offlineSub:"التلاوات التي حفظتها على هذا الجهاز",nothingSaved:"لا توجد ملفات محفوظة بعد.",footer:"مشغل القرآن الكريم",rights:"احترام شروط مصادر الصوت",loading:"جارٍ التحميل...",chooseReciter:"اختر القارئ",chooseRead:"اختر الرواية",chooseSurah:"اختر السورة",noAudio:"لا يوجد رابط صوتي متاح لهذا الاختيار.",timingUnavailable:"لا تتوفر توقيتات آيات لهذا المصحف؛ يمكنك الاستماع إلى السورة كاملة.",saved:"تم حفظ التلاوة على هذا الجهاز إذا سمح المصدر والمتصفح.",saveFailed:"تعذر الحفظ. تحقق من الاتصال ومساحة التخزين.",invalidRange:"تحقق من نطاق الآيات.",apiError:"تعذر تحميل البيانات من المصدر. أعد المحاولة لاحقاً.",playing:"جارٍ التشغيل",paused:"متوقف",removed:"تم حذف الملف المحفوظ.",offlineOnly:"حفظ التطبيق لا يعني امتلاك حق إعادة توزيع الصوت."},
@@ -23,7 +23,7 @@ async function loadCatalog(){
  try{
   const [recitersData,surahsData]=await Promise.all([api("/reciters",{language:state.lang}),api("/suwar",{language:state.lang})]);
   if(request!==catalogRequest)return;
-  state.reciters=arrayFrom(recitersData,"reciters");state.surahs=arrayFrom(surahsData,"suwar","surahs");
+  state.reciters=arrayFrom(recitersData,"reciters");state.surahs=arrayFrom(surahsData,"suwar","surahs");state.selectedRead=null;
   if(!state.reciters.length||!state.surahs.length)throw new Error("Unexpected API response");
   populateSelect($("reciterSelect"),state.reciters,t("chooseReciter"),r=>r.name||r.reciter_name||"Reciter");
   populateSelect($("surahSelect"),state.surahs,t("chooseSurah"),s=>s.name||s.sura_name_ar||s.name_ar||`Surah ${s.id}`);
@@ -40,7 +40,7 @@ function selectedReciter(){const v=$("reciterSelect").value;return v===""?null:s
 function getAudioUrl(read,surah){
  const server=read?.server||read?.audio_url||read?.url;
  if(!server)return "";
- const ids=String(read?.surah_list||"").split(",").map(x=>x.trim());
+ const ids=Array.isArray(read?.surah_list)?read.surah_list.map(String):String(read?.surah_list||"").split(",").map(x=>x.trim());
  if(read?.surah_list && !ids.includes(String(surah)))return "";
  const base=server.endsWith("/")?server:server+"/";
  return base+String(surah).padStart(3,"0")+".mp3";
@@ -82,7 +82,7 @@ async function chooseRead(){
  await refreshSelection();
 }
 async function refreshSelection(){
- const read=state.selectedRead,surah=selectedSurah();if(!read||!surah)return;
+ const read=state.selectedRead,surah=selectedSurah();state.timing=[];state.currentAyah=null;renderAyahList();if(!read||!surah){state.audioUrl="";$("audio").removeAttribute("src");return;}
  const surahNo=Number(surah.id||surah.sura_id);
  state.audioUrl=getAudioUrl(read,surahNo);
  if(!state.audioUrl){$("selectionMessage").textContent=t("noAudio");return}
