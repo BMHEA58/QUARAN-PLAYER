@@ -82,10 +82,11 @@ async function chooseRead(){
  await refreshSelection();
 }
 async function refreshSelection(){
- const read=state.selectedRead,surah=selectedSurah();state.timing=[];state.currentAyah=null;renderAyahList();if(!read||!surah){state.audioUrl="";$("audio").removeAttribute("src");return;}
+ const read=state.selectedRead,surah=selectedSurah();++timingRequest;state.timing=[];state.currentAyah=null;$("audio").pause();renderAyahList();
+ if(!read||!surah){state.audioUrl="";$("audio").removeAttribute("src");return;}
  const surahNo=Number(surah.id||surah.sura_id);
  state.audioUrl=getAudioUrl(read,surahNo);
- if(!state.audioUrl){$("selectionMessage").textContent=t("noAudio");return}
+ if(!state.audioUrl){$("audio").removeAttribute("src");$("selectionMessage").textContent=t("noAudio");return}
  $("audio").src=state.audioUrl;$("nowSurah").textContent=textOf(surah)||`Surah ${surahNo}`;$("nowReciter").textContent=(selectedReciter()?.name||"")+" · "+(read.name||read.moshaf_name||"");
  await loadTiming(read,surahNo);
 }
