@@ -84,7 +84,7 @@ async function chooseRead(){
  await refreshSelection();
 }
 async function refreshSelection(){
- const read=state.selectedRead,surah=selectedSurah();++timingRequest;state.timing=[];state.currentAyah=null;$("audio").pause();renderAyahList();
+ const read=state.selectedRead,surah=selectedSurah();++timingRequest;state.timing=[];state.currentAyah=null;$("audio").pause();if(state.objectUrl){URL.revokeObjectURL(state.objectUrl);state.objectUrl="";}renderAyahList();
  if(!read||!surah){state.audioUrl="";$("audio").removeAttribute("src");return;}
  const surahNo=Number(surah.id||surah.sura_id);
  state.audioUrl=getAudioUrl(read,surahNo);
@@ -157,7 +157,7 @@ function renderOffline(){
  items.forEach((item,i)=>{
   const row=document.createElement("div");row.className="offline-item";const name=document.createElement("span");name.textContent=`${item.title||"Quran"} — ${item.reciter||""}`;
   const actions=document.createElement("span"),play=document.createElement("button");play.textContent="▶";
-  play.onclick=async()=>{try{const cache=await caches.open("quran-audio-v1"),r=await cache.match(item.url);if(!r)throw new Error("Cache entry missing");const blob=await r.blob();if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);state.objectUrl=URL.createObjectURL(blob);$("audio").src=state.objectUrl;$("audio").play().catch(console.warn)}catch(e){console.warn(e);toast(t("saveFailed"))}};
+  play.onclick=async()=>{try{const cache=await caches.open("quran-audio-v1"),r=await cache.match(item.url);if(!r)throw new Error("Cache entry missing");const blob=await r.blob();if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);state.objectUrl=URL.createObjectURL(blob);state.audioUrl="";state.selectedRead=null;state.timing=[];state.repeatMode="none";$("audio").src=state.objectUrl;$("audio").play().catch(console.warn)}catch(e){console.warn(e);toast(t("saveFailed"))}};
   const del=document.createElement("button");del.textContent="×";del.onclick=async()=>{try{const cache=await caches.open("quran-audio-v1");await cache.delete(item.url);const latest=readSaved().filter(x=>x.url!==item.url);localStorage.setItem("quranSaved",JSON.stringify(latest));renderOffline();toast(t("removed"))}catch(e){console.warn(e);toast(t("saveFailed"))}};
   actions.append(play,del);row.append(name,actions);box.append(row);
  });
@@ -175,5 +175,5 @@ $("speedSelect").addEventListener("change",e=>$("audio").playbackRate=Number(e.t
 $("seekBar").addEventListener("input",e=>{const a=$("audio");if(a.duration)a.currentTime=a.duration*Number(e.target.value)/1000});
 $("downloadBtn").addEventListener("click",saveOffline);
 $("audio").addEventListener("timeupdate",onTimeUpdate);$("audio").addEventListener("loadedmetadata",updateProgress);$("audio").addEventListener("timeupdate",updateProgress);$("audio").addEventListener("ended",onEnded);$("audio").addEventListener("play",()=>{$("playBtn").textContent="Ⅱ"});$("audio").addEventListener("pause",()=>{$("playBtn").textContent="▶"});$("audio").addEventListener("error",()=>{$("selectionMessage").textContent=t("apiError")});
-window.addEventListener("online",updateConnection);window.addEventListener("offline",updateConnection);
+window.addEventListener("online",updateConnection);window.addEventListener("offline",updateConnection);window.addEventListener("pagehide",()=>{if(state.objectUrl)URL.revokeObjectURL(state.objectUrl)});
 (async()=>{applyLanguage();updateConnection();renderOffline();await loadCatalog();if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js").catch(console.warn)})();
