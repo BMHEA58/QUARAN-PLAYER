@@ -1,7 +1,7 @@
 name: Static site validation
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, fix/player-reliability]
   pull_request:
   workflow_dispatch:
 jobs:
@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - name: Check required files
         run: |
           test -f index.html
@@ -17,5 +20,10 @@ jobs:
           test -f sw.js
           test -f manifest.webmanifest
           test -f README.md
+          test -f tests/player-core.test.mjs
       - name: Check JavaScript syntax
         run: node --check app.js && node --check sw.js
+      - name: Run regression tests
+        run: node --test tests/*.test.mjs
+      - name: Validate manifest JSON
+        run: node -e "JSON.parse(require('node:fs').readFileSync('manifest.webmanifest', 'utf8'))"
