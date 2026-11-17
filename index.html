@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b3028">
+  <meta name="description" content="مشغل القرآن الكريم — استمع، كرر، واحفظ تلاواتك للاستماع دون إنترنت.">
+  <title>مشغل القرآن الكريم</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="مشغل القرآن الكريم">
+      <span class="brand-mark">۞</span>
+      <span><strong data-i18n="appName">مشغل القرآن الكريم</strong><small data-i18n="tagline">رفيق تلاوتك أينما كنت</small></span>
+    </a>
+    <div class="top-actions">
+      <span id="connectionState" class="connection"><i></i><span data-i18n="online">متصل</span></span>
+      <select id="languageSelect" aria-label="Language">
+        <option value="ar">العربية</option><option value="fr">Français</option><option value="en">English</option>
+      </select>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="welcome">
+      <div>
+        <p class="eyebrow" data-i18n="welcomeEyebrow">مساحتك القرآنية</p>
+        <h1 data-i18n="welcomeTitle">أنصت بقلبك، وتدبّر بطمأنينة</h1>
+        <p data-i18n="welcomeText">اختر قارئك وسورتك، وحدد موضع التلاوة والتكرار الذي يناسبك.</p>
+      </div>
+      <div class="ornament" aria-hidden="true">۞</div>
+    </section>
+
+    <section class="workspace">
+      <div class="panel selection-panel">
+        <div class="section-heading"><span class="section-icon">☾</span><div><h2 data-i18n="listenSetup">إعداد التلاوة</h2><p data-i18n="listenSetupSub">حدد القارئ والرواية والمقطع</p></div></div>
+        <label><span data-i18n="reciter">القارئ</span><select id="reciterSelect"><option value="">جاري تحميل القراء...</option></select></label>
+        <label><span data-i18n="riwaya">الرواية / المصحف</span><select id="riwayaSelect" disabled><option value="">اختر القارئ أولاً</option></select></label>
+        <label><span data-i18n="surah">السورة</span><select id="surahSelect"><option value="">جاري تحميل السور...</option></select></label>
+        <div class="two-cols">
+          <label><span data-i18n="fromAyah">من الآية</span><input id="startAyah" type="number" min="1" value="1"></label>
+          <label><span data-i18n="toAyah">إلى الآية</span><input id="endAyah" type="number" min="1" value="7"></label>
+        </div>
+        <div class="divider"></div>
+        <div class="section-heading compact"><span class="section-icon">↻</span><div><h3 data-i18n="repeatSettings">إعدادات التكرار</h3></div></div>
+        <label><span data-i18n="repeatMode">نمط التكرار</span>
+          <select id="repeatMode">
+            <option value="none" data-i18n="repeatNone">بدون تكرار</option>
+            <option value="ayah" data-i18n="repeatAyah">تكرار كل آية</option>
+            <option value="range" data-i18n="repeatRange">تكرار المقطع كاملاً</option>
+          </select>
+        </label>
+        <label><span data-i18n="repeatCount">عدد مرات التكرار</span><input id="repeatCount" type="number" min="1" max="99" value="2"></label>
+        <button id="playSelection" class="primary-btn" type="button"><span>▶</span><span data-i18n="playSelection">تشغيل التحديد</span></button>
+        <p id="selectionMessage" class="hint" role="status"></p>
+      </div>
+
+      <div class="main-column">
+        <section class="panel player-panel">
+          <div class="player-top">
+            <div><p class="eyebrow" data-i18n="nowPlaying">التلاوة الحالية</p><h2 id="nowSurah">سورة الفاتحة</h2><p id="nowReciter" class="muted">اختر قارئاً للبدء</p></div>
+            <span class="playing-mark">♫</span>
+          </div>
+          <div class="progress-wrap"><span id="currentTime">00:00</span><input id="seekBar" type="range" min="0" max="1000" value="0"><span id="duration">00:00</span></div>
+          <div class="controls">
+            <button id="restartBtn" class="round-btn" aria-label="Restart">↺</button>
+            <button id="playBtn" class="play-btn" aria-label="Play">▶</button>
+            <button id="stopBtn" class="round-btn" aria-label="Stop">■</button>
+          </div>
+          <div class="player-options">
+            <label><span data-i18n="speed">السرعة</span><select id="speedSelect"><option>0.75</option><option selected>1</option><option>1.25</option><option>1.5</option><option>2</option></select></label>
+            <button id="downloadBtn" class="secondary-btn" type="button">⇩ <span data-i18n="saveOffline">حفظ للاستماع دون إنترنت</span></button>
+          </div>
+          <audio id="audio" preload="metadata"></audio>
+        </section>
+
+        <section class="panel ayah-panel">
+          <div class="section-heading"><span class="section-icon">۞</span><div><h2 data-i18n="ayahRange">نطاق الآيات</h2><p data-i18n="ayahRangeSub">بيانات التوقيت متاحة لبعض التلاوات فقط</p></div></div>
+          <div id="timingStatus" class="notice" data-i18n="timingHint">سيتم استخدام توقيت الآيات عند توفره من المصدر.</div>
+          <div id="ayahList" class="ayah-list"><p class="muted" data-i18n="chooseRange">اختر السورة والقارئ لعرض نطاق الآيات.</p></div>
+        </section>
+
+        <section class="panel library-panel">
+          <div class="section-heading"><span class="section-icon">▣</span><div><h2 data-i18n="offlineLibrary">المكتبة دون إنترنت</h2><p data-i18n="offlineSub">التلاوات التي حفظتها على هذا الجهاز</p></div></div>
+          <div id="offlineList" class="offline-list"><p class="muted" data-i18n="nothingSaved">لا توجد ملفات محفوظة بعد.</p></div>
+        </section>
+      </div>
+    </section>
+    <footer><span data-i18n="footer">مشغل القرآن الكريم</span><span>·</span><span>MP3Quran API v3</span><span>·</span><span data-i18n="rights">احترام شروط مصادر الصوت</span></footer>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="./app.js" defer></script>
+</body>
+</html>
