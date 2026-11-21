@@ -1,43 +1,45 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-
 const app = await readFile(new URL("../app.js", import.meta.url), "utf8");
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const sw = await readFile(new URL("../sw.js", import.meta.url), "utf8");
-
-test("MP3Quran timing adapter accepts the documented raw array and converts milliseconds", () => {
-  const match = app.match(/function timingFields\(row,zeroBased=false\)\s*\{([\s\S]*?)\n\}/);
-  assert.ok(match, "timingFields must exist");
-  const timingFields = new Function("row", "zeroBased", match[1]);
-  assert.deepEqual(
-    timingFields({ ayah: 0, start_time: 2500, end_time: 6000 }, true),
-    { ayah: 1, start: 2.5, end: 6 }
-  );
+test("reciter search is present and wired to live filtering", () => {
+  assert.match(html, /id="reciterSearch"/);
+  assert.match(app, /function filterReciters\(\)/);
+  assert.match(app, /filterReciters/);
+  assert.match(app, /name\.toLocaleLowerCase\(\)\.includes\(query\)/);
 });
-
-test("timing adapter preserves already-normalized seconds", () => {
-  const match = app.match(/function timingFields\(row,zeroBased=false\)\s*\{([\s\S]*?)\n\}/);
-  const timingFields = new Function("row", "zeroBased", match[1]);
-  assert.deepEqual(
-    timingFields({ ayah: 4, start: 3.25, end: 8.5 }, false),
-    { ayah: 4, start: 3.25, end: 8.5 }
-  );
+test("riwayah selection remains available and controls the selected audio source", () => {
+  assert.match(html, /id="riwayaSelect"/);
+  assert.match(app, /function chooseRead\(\)/);
+  assert.match(app, /state\.selectedRead=value===""\?null:reads\[Number\(value\)\]/);
+  assert.match(app, /getAudioUrl\(read,surahNo\)/);
 });
-
-test("timing endpoint response supports a raw array", () => {
-  assert.match(app, /Array\.isArray\(data\)\s*\?\s*data\s*:/);
-  assert.match(app, /loadTiming\(read,surahNo\)/);
+test("ayah range and repetition controls are removed from UI and playback logic", () => {
+  for (const id of ["startAyah", "endAyah", "repeatMode", "repeatCount", "ayahList", "timingStatus"]) {
+    assert.doesNotMatch(html, new RegExp("id=[\"']"+id+"[\"']"));
+  }
+  for (const legacy of ["loadTiming", "timingFields", "state.repeatMode", "state.repeatCount", "state.rangeStart", "onEnded"]) {
+    assert.equal(app.includes(legacy), false);
+  }
+  assert.match(app, /function startSelection\(\)[\s\S]*?audio["']\)\.play\(\)/);
 });
-
+test("speed, playback controls and offline library remain available", () => {
+  for (const id of ["speedSelect", "playBtn", "restartBtn", "stopBtn", "seekBar", "downloadBtn", "offlineList"]) {
+    assert.match(html, new RegExp("id=[\"']"+id+"[\"']"));
+  }
+  assert.match(app, /playbackRate=Number/);
+  assert.match(app, /async function saveOffline\(\)/);
+});
 test("all JavaScript DOM id references exist in the page", () => {
   const referenced = [...app.matchAll(/\$\(["']([^"']+)["']\)/g)].map(x => x[1]);
   const ids = new Set([...html.matchAll(/\bid=["']([^"']+)["']/g)].map(x => x[1]));
   const missing = [...new Set(referenced)].filter(id => !ids.has(id));
   assert.deepEqual(missing, []);
 });
-
-test("service worker does not delete caches owned by other applications", () => {
+test("service worker cache is versioned and isolated from other applications", () => {
+  assert.match(sw, /quran-player-shell-v3/);
   assert.match(sw, /key\.startsWith\("quran-player-shell-"\)/);
   assert.match(sw, /if\s*\(request\.method\s*!==\s*"GET"\)\s*return/);
   assert.match(sw, /request\.mode\s*===\s*"navigate"/);

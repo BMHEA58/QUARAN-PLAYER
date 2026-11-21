@@ -1,7 +1,7 @@
 name: Static site validation
 on:
   push:
-    branches: [main, master, fix/player-reliability]
+    branches: [main, master, fix/player-reliability, feature/surah-playback-reciter-search]
   pull_request:
   workflow_dispatch:
 jobs:
