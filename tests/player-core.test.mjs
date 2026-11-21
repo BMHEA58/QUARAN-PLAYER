@@ -39,8 +39,25 @@ test("all JavaScript DOM id references exist in the page", () => {
   assert.deepEqual(missing, []);
 });
 test("service worker cache is versioned and isolated from other applications", () => {
-  assert.match(sw, /quran-player-shell-v3/);
+  assert.match(sw, /quran-player-shell-v4/);
   assert.match(sw, /key\.startsWith\("quran-player-shell-"\)/);
   assert.match(sw, /if\s*\(request\.method\s*!==\s*"GET"\)\s*return/);
   assert.match(sw, /request\.mode\s*===\s*"navigate"/);
+});
+
+test("playback starts the full selected surah without legacy ayah-range validation", () => {
+  const start = app.match(/function startSelection\(\)\s*\{([\s\S]*?)\n\}/);
+  assert.ok(start, "startSelection must exist");
+  assert.match(start[1], /audio["']\)\.currentTime=0/);
+  assert.match(start[1], /audio["']\)\.play\(\)/);
+  assert.doesNotMatch(start[1], /validateRange|invalidRange|startAyah|endAyah/);
+  assert.equal(app.includes("invalidRange"), false);
+});
+
+test("service worker refreshes shell assets from network before cached fallback", () => {
+  assert.match(sw, /quran-player-shell-v4/);
+  assert.match(sw, /fetch\(request, \{ cache: "no-store" \}\)/);
+  assert.match(sw, /async function fetchAndCache/);
+  assert.match(sw, /Network-first for the application shell/);
+  assert.match(sw, /key\.startsWith\("quran-player-shell-"\)/);
 });
