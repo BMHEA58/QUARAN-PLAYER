@@ -4,9 +4,10 @@ import { readFile } from "node:fs/promises";
 const app = await readFile(new URL("../app.js", import.meta.url), "utf8");
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const sw = await readFile(new URL("../sw.js", import.meta.url), "utf8");
+const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 test("reciter search is present and wired to live filtering", () => {
   assert.match(html, /id="reciterSearch"/);
-  assert.match(app, /function filterReciters\(\)/);
+  assert.match(app, /function filterReciters\(/);
   assert.match(app, /filterReciters/);
   assert.match(app, /name\.toLocaleLowerCase\(\)\.includes\(query\)/);
 });
@@ -39,7 +40,7 @@ test("all JavaScript DOM id references exist in the page", () => {
   assert.deepEqual(missing, []);
 });
 test("service worker cache is versioned and isolated from other applications", () => {
-  assert.match(sw, /quran-player-shell-v4/);
+  assert.match(sw, /quran-player-shell-v5/);
   assert.match(sw, /key\.startsWith\("quran-player-shell-"\)/);
   assert.match(sw, /if\s*\(request\.method\s*!==\s*"GET"\)\s*return/);
   assert.match(sw, /request\.mode\s*===\s*"navigate"/);
@@ -55,9 +56,19 @@ test("playback starts the full selected surah without legacy ayah-range validati
 });
 
 test("service worker refreshes shell assets from network before cached fallback", () => {
-  assert.match(sw, /quran-player-shell-v4/);
+  assert.match(sw, /quran-player-shell-v5/);
   assert.match(sw, /fetch\(request, \{ cache: "no-store" \}\)/);
   assert.match(sw, /async function fetchAndCache/);
   assert.match(sw, /Network-first for the application shell/);
   assert.match(sw, /key\.startsWith\("quran-player-shell-"\)/);
 });
+
+test("reciter search and selection share one visible combobox with a dropdown", () => {
+ assert.match(html,/id="reciterSearch"[^>]*role="combobox"/);assert.match(html,/id="reciterOptions"[^>]*role="listbox"/);assert.match(html,/id="reciterSelect" class="visually-hidden"/);
+ assert.match(app,/function selectReciter\(index\)/);assert.match(app,/function moveReciterOption\(delta\)/);assert.match(app,/noReciterResults/);assert.match(app,/ArrowDown/);assert.match(app,/e\.key==="Enter"/);
+});
+test("sticky playback bar is wired to the existing audio element",()=>{
+ for(const id of ["stickyPlayer","stickySurah","stickyReciter","stickyPlayBtn","stickyRestartBtn","stickyStopBtn","stickySeekBar","stickyCurrentTime","stickyDuration"])assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(app,/function setStickyPlayerVisible\(v\)/);assert.match(app,/stickyPlayBtn/);assert.match(app,/stickySeekBar/);assert.match(css,/\.sticky-player\{position:sticky/);assert.match(css,/\.topbar\{position:sticky/);
+});
+test("hero copy is updated in all supported languages",()=>{assert.match(html,/عِش مع القرآن/);assert.match(app,/Vivez le Coran/);assert.match(app,/Live the Quran/);});
