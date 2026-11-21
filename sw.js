@@ -1,4 +1,4 @@
-const SHELL_CACHE = "quran-player-shell-v2";
+const SHELL_CACHE = "quran-player-shell-v3";
 const AUDIO_CACHE = "quran-audio-v1";
 const SHELL = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./assets/icon.svg"];
 
