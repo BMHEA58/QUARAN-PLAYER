@@ -45,6 +45,18 @@ function filterReciters(){
  });
  if([...select.options].some(option=>option.value===selected))select.value=selected;
 }
+async function chooseReciter(){
+ const reciter=selectedReciter(),reads=readList(reciter);state.selectedRead=null;
+ populateSelect($("riwayaSelect"),reads,t("chooseRead"),r=>r.name||r.moshaf_name||r.rewaya_name||"Riwayah");
+ $("riwayaSelect").disabled=!reads.length;
+ if(!reads.length)$("selectionMessage").textContent=t("noAudio");
+ await refreshSelection();
+}
+async function chooseRead(){
+ const reads=readList(selectedReciter()),value=$("riwayaSelect").value;
+ state.selectedRead=value===""?null:reads[Number(value)]||null;
+ await refreshSelection();
+}
 function selectedSurah(){const v=$("surahSelect").value;return v===""?null:state.surahs[Number(v)]}
 function selectedReciter(){const v=$("reciterSelect").value;return v===""?null:state.reciters[Number(v)]}
 function getAudioUrl(read,surah){
