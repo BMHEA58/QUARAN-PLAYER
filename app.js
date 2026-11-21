@@ -37,7 +37,7 @@ async function loadCatalog(){
 function readList(reciter){return arrayFrom(reciter,"moshaf","reads")}
 let reciterMatches=[];let activeReciterOption=-1;
 function hideReciterOptions(){const list=$("reciterOptions");list.hidden=true;$("reciterSearch").setAttribute("aria-expanded","false");$("reciterSearch").removeAttribute("aria-activedescendant")}
-function filterReciters(open=true){
+function filterReciters(open=false){
  const select=$("reciterSelect"),selected=select.value,query=$("reciterSearch").value.trim().toLocaleLowerCase();select.innerHTML="";
  const first=document.createElement("option");first.value="";first.textContent=t("chooseReciter");select.append(first);reciterMatches=[];
  state.reciters.forEach((reciter,index)=>{const name=reciter.name||reciter.reciter_name||"Reciter";if(query&&!name.toLocaleLowerCase().includes(query))return;const option=document.createElement("option");option.value=String(index);option.textContent=name;select.append(option);reciterMatches.push({index,name})});
@@ -72,6 +72,7 @@ function getAudioUrl(read,surah){
  return base+String(surah).padStart(3,"0")+".mp3";
 }
 async function refreshSelection(){
+ setStickyPlayerVisible(false);
  const read=state.selectedRead,surah=selectedSurah();
  $("audio").pause();
  if(state.objectUrl){URL.revokeObjectURL(state.objectUrl);state.objectUrl="";}
