@@ -61,3 +61,13 @@ test("service worker refreshes shell assets from network before cached fallback"
   assert.match(sw, /Network-first for the application shell/);
   assert.match(sw, /key\.startsWith\("quran-player-shell-"\)/);
 });
+
+test("reciter search and selection share one visible combobox with a dropdown", () => {
+ assert.match(html,/id="reciterSearch"[^>]*role="combobox"/);assert.match(html,/id="reciterOptions"[^>]*role="listbox"/);assert.match(html,/id="reciterSelect" class="visually-hidden"/);
+ assert.match(app,/function selectReciter\(index\)/);assert.match(app,/function moveReciterOption\(delta\)/);assert.match(app,/noReciterResults/);assert.match(app,/ArrowDown/);assert.match(app,/e\.key==="Enter"/);
+});
+test("sticky playback bar is wired to the existing audio element",()=>{
+ for(const id of ["stickyPlayer","stickySurah","stickyReciter","stickyPlayBtn","stickyRestartBtn","stickyStopBtn","stickySeekBar","stickyCurrentTime","stickyDuration"])assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(app,/function setStickyPlayerVisible\(v\)/);assert.match(app,/stickyPlayBtn/);assert.match(app,/stickySeekBar/);assert.match(css,/\.sticky-player\{position:sticky/);assert.match(css,/\.topbar\{position:sticky/);
+});
+test("hero copy is updated in all supported languages",()=>{assert.match(html,/عِش مع القرآن/);assert.match(app,/Vivez le Coran/);assert.match(app,/Live the Quran/);});
